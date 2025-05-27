@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'pages.apps.PagesConfig',
     'blog.apps.BlogConfig',
+    'django_bootstrap5',
     'debug_toolbar',
 ]
 
@@ -135,3 +136,17 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_REDIRECT_URL = 'blog:index'
+LOGIN_URL = 'login'
+
+MEDIA_ROOT = BASE_DIR / 'media'  # Папка для загружаемых файлов
+MEDIA_URL = '/media/'  # URL-префикс для медиафайлов
+
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
+
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+]

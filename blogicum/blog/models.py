@@ -48,6 +48,7 @@ class Location(models.Model):
 class Post(models.Model):
     title = models.CharField(max_length=256, verbose_name='Заголовок')
     text = models.TextField(verbose_name='Текст')
+    image = models.ImageField('Фото', upload_to='images', blank=True)
     pub_date = models.DateTimeField(
         verbose_name='Дата и время публикации',
         help_text='Если установить дату и время в будущем'
@@ -77,5 +78,25 @@ class Post(models.Model):
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
 
+    @property
+    def comment_count(self):
+        return self.comment.count()
+
     def __str__(self):
         return self.title
+
+
+class Comment(models.Model):
+    text = models.TextField('Комменатрий')
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='comment',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'комментарий'
+        verbose_name_plural = 'Комментарии'
+        ordering = ('-created_at',)
