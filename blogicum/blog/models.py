@@ -1,7 +1,16 @@
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from django.db import models
 
 User = get_user_model()
+
+
+class PublishedManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            is_published=True,
+            pub_date__lte=timezone.now()
+        )
 
 
 class Category(models.Model):
@@ -73,10 +82,13 @@ class Post(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Добавлено')
+    objects = models.Manager()  # стандартный менеджер
+    published = PublishedManager()  # менеджер для базовой фильтрации
 
     class Meta:
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
+        ordering = ['-pub_date']
 
     @property
     def comment_count(self):
@@ -92,9 +104,16 @@ class Comment(models.Model):
         Post,
         on_delete=models.CASCADE,
         related_name='comment',
+        verbose_name='Пост',
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата и время публикации',
+    )
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        verbose_name='Автор',
+    )
 
     class Meta:
         verbose_name = 'комментарий'

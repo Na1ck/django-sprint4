@@ -4,11 +4,9 @@ from django.conf import settings
 from django.views.generic.edit import CreateView
 from django.contrib.auth.forms import UserCreationForm
 
-from blog import views
 
 urlpatterns = [
     path('', include('blog.urls', namespace='blog')),
-    path("auth/logout/", views.CustomLogoutView.as_view(), name="logout"),
     path('auth/', include('django.contrib.auth.urls')),
     path('auth/registration/',
          CreateView.as_view(
@@ -24,7 +22,6 @@ urlpatterns = [
 
 if settings.DEBUG:
     import debug_toolbar
-    # Добавить к списку urlpatterns список адресов из приложения debug_toolbar:
     urlpatterns += (path('__debug__/', include(debug_toolbar.urls)),)
 
 

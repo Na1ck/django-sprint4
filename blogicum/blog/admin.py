@@ -1,10 +1,39 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 
-from .models import Category, Location, Post
+from .models import Category, Location, Post, Comment
 
-admin.site.empty_value_display = 'Не задано'
+User = get_user_model()
 
 
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = (
+        'title',
+        'description',
+        'slug',
+        'is_published',
+        'created_at',
+    )
+    list_editable = ('is_published',)
+    list_filter = ('is_published', 'created_at')
+    search_fields = ('title', 'description', 'slug')
+    prepopulated_fields = {'slug': ('title',)}
+
+
+@admin.register(Location)
+class LocationAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'is_published',
+        'created_at',
+    )
+    list_editable = ('is_published',)
+    list_filter = ('is_published', 'created_at')
+    search_fields = ('name',)
+
+
+@admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     list_display = (
         'title',
@@ -13,48 +42,53 @@ class PostAdmin(admin.ModelAdmin):
         'location',
         'category',
         'is_published',
+        'created_at',
+        'comment_count',
     )
-    list_editable = (
-        'is_published',
-        'category',
-        'location'
-    )
+    list_editable = ('is_published',)
     list_filter = (
         'is_published',
         'category',
+        'location',
         'pub_date',
-        'location'
+        'created_at',
     )
-    search_fields = (
-        'title',
-        'text',
-        'author__username'
-    )
-    list_display_links = ('title',)
+    search_fields = ('title', 'text')
+    filter_horizontal = ()
     date_hierarchy = 'pub_date'
-
-
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = (
-        'title',
-        'slug',
-        'is_published',
-
+    raw_id_fields = ('author',)
+    readonly_fields = ('created_at', 'comment_count')
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'text', 'image', 'author')
+        }),
+        ('Дополнительные опции', {
+            'fields': (
+                'pub_date',
+                'location',
+                'category',
+                'is_published',
+                'created_at',
+            ),
+            'classes': ('collapse',),
+        }),
     )
-    list_editable = ('is_published',)
-    search_fields = ('title', 'description')
-    prepopulated_fields = {'slug': ('title',)}
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(author=request.user)
 
 
-class LocationAdmin(admin.ModelAdmin):
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
     list_display = (
-        'name',
-        'is_published',
+        'text',
+        'post',
+        'author',
+        'created_at',
     )
-    list_editable = ('is_published',)
-    search_fields = ('name',)
-
-
-admin.site.register(Post, PostAdmin)
-admin.site.register(Category, CategoryAdmin)
-admin.site.register(Location, LocationAdmin)
+    list_filter = ('created_at', 'author')
+    search_fields = ('text', 'post__title', 'author__username')
+    readonly_fields = ('created_at',)
