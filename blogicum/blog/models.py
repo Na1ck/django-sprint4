@@ -7,10 +7,20 @@ User = get_user_model()
 
 class PublishedManager(models.Manager):
     def get_queryset(self):
+        return super().get_queryset()
+
+    def published(self):
         return super().get_queryset().filter(
             is_published=True,
-            pub_date__lte=timezone.now()
+            category__is_published=True,
+            pub_date__lte=timezone.now(),
         )
+
+    def by_category(self, category=None):
+        queryset = self.published()
+        if category:
+            queryset = queryset.filter(category=category)
+        return queryset
 
 
 class Category(models.Model):
@@ -65,7 +75,8 @@ class Post(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Автор публикации')
+        verbose_name='Автор публикации',
+        related_name='author')
     location = models.ForeignKey(
         Location,
         on_delete=models.SET_NULL,
@@ -82,8 +93,7 @@ class Post(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Добавлено')
-    objects = models.Manager()  # стандартный менеджер
-    published = PublishedManager()  # менеджер для базовой фильтрации
+    objects = PublishedManager()
 
     class Meta:
         verbose_name = 'публикация'
@@ -113,6 +123,7 @@ class Comment(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE,
         verbose_name='Автор',
+        related_name='author',
     )
 
     class Meta:

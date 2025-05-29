@@ -1,11 +1,10 @@
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from django.views.generic import (
     CreateView, DeleteView, DetailView, ListView, UpdateView
 )
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse
 
 from .models import Post, Category, Comment
 from .forms import PostForm, CommentForm
@@ -33,15 +32,13 @@ class ProfileView(PaginatorMixin, ListView):
     def get_queryset(self):
         queryset = Post.objects.filter(author=self.profile_user)
         if not self.request.user == self.profile_user:
-            queryset = queryset.filter(is_published=True)
+            queryset = Post.objects.published()
 
         return queryset.select_related('author')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({
-            'profile': self.profile_user,
-        })
+        context['profile'] = self.profile_user
         return context
 
 
@@ -70,7 +67,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse_lazy(
+        return reverse(
             'blog:profile',
             kwargs={'username': self.request.user.username}
         )
@@ -81,9 +78,7 @@ class PostListView(PaginatorMixin, ListView):
     template_name = 'blog/index.html'
 
     def get_queryset(self):
-        return Post.published.filter(
-            category__is_published=True
-        )
+        return Post.objects.published()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -95,20 +90,24 @@ class CategoryListView(PaginatorMixin, LoginRequiredMixin, ListView):
     template_name = 'blog/category.html'
     context_object_name = 'posts'
     slug_url_kwarg = 'category_slug'
-    model = Post
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._category = None
+
+    @property
+    def category(self):
+        if self._category is None:
+            slug = self.kwargs['category_slug']
+            self._category = get_object_or_404(
+                Category.objects.filter(is_published=True),
+                slug=slug
+            )
+        return self._category
 
     def get_queryset(self):
-        slug = self.kwargs['category_slug']
-        self.category = get_object_or_404(
-            Category,
-            slug=slug,
-            is_published=True
-        )
-
-        return super().get_queryset().filter(
-            is_published=True,
-            category=self.category,
-            pub_date__lte=timezone.now()
+        return Post.objects.by_category(
+            category=self.category
         )
 
     def get_context_data(self, **kwargs):
@@ -127,9 +126,7 @@ class PostDetailView(DetailView):
         post = get_object_or_404(Post, pk=self.kwargs['post_id'])
 
         if post.author != self.request.user:
-            queryset = Post.published.filter(
-                category__is_published=True
-            )
+            queryset = Post.objects.published()
         return queryset
 
     def get_context_data(self, **kwargs):
