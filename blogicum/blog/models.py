@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Count
 from django.utils import timezone
 from django.db import models
 
@@ -7,14 +8,21 @@ User = get_user_model()
 
 class PublishedManager(models.Manager):
     def published(self, category=None):
-        queryset = self.get_queryset().filter(
+        queryset = self.select_related(
+            'category', 'author', 'location'
+        ).filter(
             is_published=True,
-            category__is_published=True,
             pub_date__lte=timezone.now(),
-        ).select_related('category', 'author', 'location')
+        ).annotate(
+            comment_count=Count('comment')
+        )
 
         if category:
-            queryset = queryset.filter(category=category)
+            queryset = queryset.filter(
+                category=category,
+            )
+        else:
+            queryset = queryset.filter(category__is_published=True)
 
         return queryset
 

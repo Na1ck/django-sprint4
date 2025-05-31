@@ -5,7 +5,6 @@ from django.views.generic import (
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
-from django.db.models import Count
 
 from .models import Post, Category, Comment
 from .forms import PostForm, CommentForm
@@ -34,11 +33,10 @@ class ProfileView(PaginatorMixin, ListView):
         queryset = Post.objects.filter(author=self.profile_user)
 
         if not self.request.user == self.profile_user:
-            queryset = Post.objects.filter(author=self.profile_user)
+            queryset = Post.objects.published().filter(
+                author=self.profile_user)
 
-        return queryset.select_related('author').annotate(
-            comment_count=Count('comment')
-        ).order_by('-pub_date')
+        return queryset.order_by('-pub_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -82,9 +80,7 @@ class PostListView(PaginatorMixin, ListView):
     template_name = 'blog/index.html'
 
     def get_queryset(self):
-        return Post.objects.published().annotate(
-            comment_count=Count('comment')
-        ).order_by('-pub_date')
+        return Post.objects.published().order_by('-pub_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -114,7 +110,7 @@ class CategoryListView(PaginatorMixin, LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Post.objects.published(
             category=self.category
-        )
+        ).order_by('-pub_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
