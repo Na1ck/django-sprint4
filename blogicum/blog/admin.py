@@ -43,7 +43,7 @@ class PostAdmin(admin.ModelAdmin):
         'category',
         'is_published',
         'created_at',
-        'comment_count',
+        'get_comment_count',
     )
     list_editable = ('is_published',)
     list_filter = (
@@ -57,7 +57,7 @@ class PostAdmin(admin.ModelAdmin):
     filter_horizontal = ()
     date_hierarchy = 'pub_date'
     raw_id_fields = ('author',)
-    readonly_fields = ('created_at', 'comment_count')
+    readonly_fields = ('created_at', 'get_comment_count')
     fieldsets = (
         (None, {
             'fields': ('title', 'text', 'image', 'author')
@@ -79,6 +79,10 @@ class PostAdmin(admin.ModelAdmin):
         if request.user.is_superuser:
             return qs
         return qs.filter(author=request.user)
+
+    def get_comment_count(self, obj):
+        return obj.comment.count()
+    get_comment_count.short_description = 'Количество комментариев'
 
 
 @admin.register(Comment)

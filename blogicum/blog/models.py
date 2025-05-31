@@ -6,20 +6,16 @@ User = get_user_model()
 
 
 class PublishedManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset()
-
-    def published(self):
-        return super().get_queryset().filter(
+    def published(self, category=None):
+        queryset = self.get_queryset().filter(
             is_published=True,
             category__is_published=True,
             pub_date__lte=timezone.now(),
-        )
+        ).select_related('category', 'author', 'location')
 
-    def by_category(self, category=None):
-        queryset = self.published()
         if category:
             queryset = queryset.filter(category=category)
+
         return queryset
 
 
@@ -76,7 +72,7 @@ class Post(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор публикации',
-        related_name='author')
+        related_name='post')
     location = models.ForeignKey(
         Location,
         on_delete=models.SET_NULL,
@@ -100,16 +96,17 @@ class Post(models.Model):
         verbose_name_plural = 'Публикации'
         ordering = ['-pub_date']
 
-    @property
-    def comment_count(self):
-        return self.comment.count()
-
     def __str__(self):
         return self.title
 
 
+'''    @property
+    def comment_count(self):
+        return self.comment.count()'''
+
+
 class Comment(models.Model):
-    text = models.TextField('Комменатрий')
+    text = models.TextField('Комментарий')
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
@@ -123,7 +120,7 @@ class Comment(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE,
         verbose_name='Автор',
-        related_name='author',
+        related_name='comment',
     )
 
     class Meta:
