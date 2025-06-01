@@ -33,7 +33,7 @@ class ProfileView(PaginatorMixin, ListView):
         queryset = Post.objects.filter(author=self.profile_user)
 
         if not self.request.user == self.profile_user:
-            queryset = Post.objects.published().filter(
+            queryset = Post.objects.published_with_comments().filter(
                 author=self.profile_user)
 
         return queryset.order_by('-pub_date')
@@ -80,7 +80,7 @@ class PostListView(PaginatorMixin, ListView):
     template_name = 'blog/index.html'
 
     def get_queryset(self):
-        return Post.objects.published().order_by('-pub_date')
+        return Post.objects.published_with_comments().order_by('-pub_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

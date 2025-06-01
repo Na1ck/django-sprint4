@@ -13,8 +13,6 @@ class PublishedManager(models.Manager):
         ).filter(
             is_published=True,
             pub_date__lte=timezone.now(),
-        ).annotate(
-            comment_count=Count('comment')
         )
 
         if category:
@@ -25,6 +23,15 @@ class PublishedManager(models.Manager):
             queryset = queryset.filter(category__is_published=True)
 
         return queryset
+
+    def comment_count(self, queryset=None):
+        if queryset is None:
+            queryset = self.get_queryset()
+        return queryset.annotate(comment_count=Count('comment'))
+
+    def published_with_comments(self, category=None):
+        queryset = self.published(category)
+        return self.comment_count(queryset)
 
 
 class Category(models.Model):
