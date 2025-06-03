@@ -31,7 +31,7 @@ class ProfileView(PaginatorMixin, ListView):
 
     def get_queryset(self):
         queryset = Post.objects.filter(author=self.profile_user)
-        
+
         if not self.request.user == self.profile_user:
             queryset = Post.objects.published_with_comments().filter(
                 author=self.profile_user)

@@ -16,22 +16,19 @@ class PublishedManager(models.Manager):
         )
 
         if category:
-            queryset = queryset.filter(
-                category=category,
-            )
-        else:
-            queryset = queryset.filter(category__is_published=True)
+            return queryset.filter(category=category)
+        return queryset.filter(category__is_published=True)
 
-        return queryset
-
-    def comment_count(self, queryset=None):
-        if queryset is None:
-            queryset = self.get_queryset()
-        return queryset.annotate(comment_count=Count('comment'))
-
-    def published_with_comments(self, category=None):
-        queryset = self.published(category)
-        return self.comment_count(queryset)
+    def published_with_comments(self):
+        return self.published().annotate(comment_count=Count('comment'))
+    # Думаю это решение будет правильным, т.к.
+    # чтобы использовать два метода подряд:
+    # return SomeModel.objects.date_since(filter_date).existed_only()
+    # нужно использовать QuerySet класс,
+    # а не просто менеджер модели, как в примере.
+    # SomeModel.objects.date_since(filter_date).existed_only() -
+    # не будет работать, потому что date_since() возвращает QuerySet.
+    # QuerySet не имеет атрибут existed_only()
 
 
 class Category(models.Model):
